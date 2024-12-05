@@ -257,35 +257,48 @@ def get_status():
 @app.route('/search', methods=['POST'])
 def search():
     """Handle image search requests"""
-    if not product_manager.is_initialized or len(product_manager.products) == 0:
-        status = {
-            'error': 'Products still loading, please wait',
-            'total_products': len(product_manager.products),
-            'products_with_features': len(product_manager.features),
-            'initialization_error': product_manager.initialization_error,
-            'woocommerce_status': "Connected" if product_manager.test_woocommerce_connection() else "Not Connected"
-        }
-        return jsonify(status), 503
-
     try:
+        # Check if product manager is initialized
+        if not product_manager.is_initialized or len(product_manager.products) == 0:
+            return jsonify({
+                'error': 'Products still loading, please wait',
+                'total_products': len(product_manager.products),
+                'products_with_features': len(product_manager.features),
+                'initialization_error': product_manager.initialization_error,
+                'woocommerce_status': "Connected" if product_manager.test_woocommerce_connection() else "Not Connected"
+            }), 503
+
+        # Check if file exists in request
         if 'file' not in request.files:
             return jsonify({'error': 'No file uploaded'}), 400
         
         file = request.files['file']
         if file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
+
+        # Validate file type
+        if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            return jsonify({'error': 'Invalid file type. Please upload a PNG or JPG image'}), 400
         
         # Process the image
-        img = Image.open(file.stream)
-        img = img.convert('RGB')
-        img = img.resize((224, 224))
-        img_array = image.img_to_array(img)
-        img_array = np.expand_dims(img_array, axis=0)
-        img_array = preprocess_input(img_array)
+        try:
+            img = Image.open(file.stream)
+            img = img.convert('RGB')
+            img = img.resize((224, 224))
+            img_array = image.img_to_array(img)
+            img_array = np.expand_dims(img_array, axis=0)
+            img_array = preprocess_input(img_array)
+        except Exception as e:
+            logger.error(f"Error processing image: {str(e)}")
+            return jsonify({'error': 'Invalid image format or corrupted file'}), 400
         
         # Extract features
-        query_features = feature_extractor.predict(img_array, verbose=0)
-        query_features = normalize(query_features).flatten()
+        try:
+            query_features = feature_extractor.predict(img_array, verbose=0)
+            query_features = normalize(query_features).flatten()
+        except Exception as e:
+            logger.error(f"Error extracting features: {str(e)}")
+            return jsonify({'error': 'Error processing image features'}), 500
         
         # Calculate similarities
         similarities = []
@@ -310,7 +323,7 @@ def search():
                     'price': price_display,
                     'image_url': product['image_path'],
                     'product_url': product['product_url'],
-                    'score': score,
+                    'score': float(score),  # Ensure score is JSON serializable
                     'categories': product['categories']
                 })
         
@@ -325,8 +338,8 @@ def search():
 
     except Exception as e:
         logger.error(f"Error processing search: {str(e)}")
-        logger.debug(traceback.format_exc())
-        return jsonify({'error': 'Error processing image'}), 500
+        logger.error(traceback.format_exc())
+        return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/search_products')
 def search_products():
