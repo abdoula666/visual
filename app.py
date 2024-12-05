@@ -373,8 +373,8 @@ if __name__ == '__main__':
     # Initialize product manager
     product_manager = ProductManager()
     
-    # Get port from environment variable or use default
-    port = int(os.environ.get('PORT', 8000))
+    # Use fixed port 29467
+    port = 29467
     host = os.environ.get('HOST', 'localhost')
     
     # Always use localhost for better compatibility

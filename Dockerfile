@@ -25,12 +25,13 @@ RUN chmod -R 777 uploads product_images
 ENV FLASK_ENV=development
 ENV FLASK_DEBUG=1
 ENV HOST=localhost
+ENV PORT=29467
 
-# Expose the port the app runs on
-EXPOSE 8000
+# Expose the port
+EXPOSE 29467
 
 # Command to run the application using gunicorn with optimized settings
-CMD ["gunicorn", "--bind", "localhost:8000", \
+CMD ["gunicorn", "--bind", "localhost:29467", \
      "--timeout", "300", \
      "--workers", "1", \
      "--threads", "4", \
