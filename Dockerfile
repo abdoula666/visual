@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Pre-download ResNet50 weights
+RUN python -c "from tensorflow.keras.applications import ResNet50; ResNet50(weights='imagenet', include_top=False)"
+
 # Copy the rest of the application
 COPY . .
 
@@ -21,5 +24,5 @@ RUN chmod -R 777 uploads product_images
 # Expose the port the app runs on
 EXPOSE 8000
 
-# Command to run the application using gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]
+# Command to run the application using gunicorn with increased timeout
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--timeout", "300", "--workers", "1", "--threads", "4", "app:app"]
