@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: visual-search-app
+    env: docker
+    region: oregon  # or choose your preferred region
+    plan: standard
+    healthCheckPath: /
+    envVars:
+      - key: PORT
+        value: 8000
+      # Add your other environment variables here, but don't include actual values
+      # They should be configured in Render's dashboard
+    disk:
+      name: uploads
+      mountPath: /app/uploads
+      sizeGB: 1
