@@ -21,26 +21,24 @@ COPY . .
 RUN mkdir -p uploads product_images
 RUN chmod -R 777 uploads product_images
 
+# Set environment variables
+ENV FLASK_ENV=development
+ENV FLASK_DEBUG=1
+ENV HOST=localhost
+
 # Expose the port the app runs on
 EXPOSE 8000
 
-# Set environment variables for better performance
-ENV PYTHONUNBUFFERED=1
-ENV WORKERS=1
-ENV THREADS=4
-ENV TIMEOUT=300
-ENV MAX_REQUESTS=1000
-ENV KEEP_ALIVE=5
-
 # Command to run the application using gunicorn with optimized settings
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", \
+CMD ["gunicorn", "--bind", "localhost:8000", \
      "--timeout", "300", \
      "--workers", "1", \
      "--threads", "4", \
      "--max-requests", "1000", \
      "--keep-alive", "5", \
-     "--log-level", "info", \
+     "--log-level", "debug", \
      "--access-logfile", "-", \
      "--error-logfile", "-", \
      "--worker-class", "gthread", \
+     "--reload", \
      "app:app"]
