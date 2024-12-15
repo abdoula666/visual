@@ -19,6 +19,7 @@ import traceback
 import json
 from dotenv import load_dotenv
 from search import search_bp
+from pathlib import Path
 
 # Load environment variables from .env file
 load_dotenv()
@@ -30,9 +31,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Ensure static folder exists
+static_path = Path("static")
+static_path.mkdir(exist_ok=True)
+
+# Update the app configuration
 app = Flask(__name__)
 app.register_blueprint(search_bp)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['UPLOAD_FOLDER'] = str(static_path)
 
 # WooCommerce API Configuration
 WOOCOMMERCE_URL = os.getenv('WOOCOMMERCE_URL')
@@ -356,9 +363,14 @@ def search_products():
         logger.error(f"Error searching products: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+# Add at the end of your app.py
+app.debug = False  # Set to False for production
+
+# Vercel handler
 if __name__ == '__main__':
     # Initialize product manager
     product_manager = ProductManager()
     
     # Start Flask app
-    app.run(host='127.0.0.1', port=32674, debug=True)
+    port = int(os.environ.get('PORT', 3000))
+    app.run(host='0.0.0.0', port=port)
